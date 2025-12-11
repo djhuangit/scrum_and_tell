@@ -2,6 +2,29 @@
 
 > Doc-aware voice meeting agent - from zero to MVP
 
+---
+
+## Current Status
+
+**Phase 1: COMPLETE** - Project foundation set up with Next.js 14+, Clerk auth, Convex database, and basic UI.
+
+**Next: Phase 2** - Room Management (CRUD, document upload, context summarisation)
+
+### What's Done
+- Next.js app with TypeScript, Tailwind, App Router
+- Clerk authentication with sign-in/sign-up pages and redirect to dashboard
+- Convex schema deployed with user sync on login
+- Landing page, dashboard layout, room pages (list, lobby, meeting shells)
+- Environment config with Zod validation
+
+### Key Files
+- `src/app/dashboard/` - authenticated pages
+- `convex/schema.ts` - database schema
+- `convex/users.ts` - user sync mutation
+- `src/hooks/use-sync-user.ts` - auto-sync user on dashboard load
+
+---
+
 ## Overview
 
 This plan outlines the implementation of **Ops Room Companion**, a voice-first meeting facilitator that reads attached documents, facilitates meetings via an avatar, listens to participants, and produces structured action plans.
@@ -263,13 +286,13 @@ export default defineSchema({
 - [x] `npm run dev` starts without errors
 - [x] `npm run build` completes successfully
 - [x] `npm run lint` passes
-- [ ] `npx convex dev` connects and syncs schema
-- [ ] Clerk authentication flow works (sign-in/sign-up)
+- [x] `npx convex dev` connects and syncs schema
+- [x] Clerk authentication flow works (sign-in/sign-up)
 
 #### Manual Verification:
-- [ ] Landing page renders correctly
-- [ ] Sign in redirects to dashboard
-- [ ] Convex dashboard shows tables
+- [x] Landing page renders correctly
+- [x] Sign in redirects to dashboard
+- [x] Convex dashboard shows tables
 
 ---
 

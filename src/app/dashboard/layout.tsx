@@ -4,6 +4,7 @@ import { UserButton } from '@clerk/nextjs';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ReactNode } from 'react';
+import { useSyncUser } from '@/hooks/use-sync-user';
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -11,6 +12,7 @@ interface DashboardLayoutProps {
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const pathname = usePathname();
+  useSyncUser();
 
   const isActive = (path: string) => {
     if (path === '/dashboard') {
