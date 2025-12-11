@@ -6,6 +6,8 @@ import { useQuery, useMutation, useAction } from 'convex/react';
 import { api } from '../../../../../convex/_generated/api';
 import { Id } from '../../../../../convex/_generated/dataModel';
 import { useState, useRef, useCallback } from 'react';
+import { MeetingSummary } from '@/components/meeting/MeetingSummary';
+import { ActionItemsPanel } from '@/components/meeting/ActionItemsPanel';
 
 interface DocumentItemProps {
   id: Id<'documents'>;
@@ -88,6 +90,8 @@ export default function RoomLobbyPage() {
 
   const room = useQuery(api.rooms.get, { id: roomId });
   const documents = useQuery(api.documents.listByRoom, { roomId });
+  const latestSummary = useQuery(api.summaries.getLatestByRoom, { roomId });
+  const actionItems = useQuery(api.actionItems.listByRoom, { roomId });
   const generateUploadUrl = useMutation(api.documents.generateUploadUrl);
   const createDocument = useMutation(api.documents.create);
   const deleteDocument = useMutation(api.documents.remove);
@@ -438,6 +442,38 @@ export default function RoomLobbyPage() {
           </Link>
         </div>
       </div>
+
+      {(latestSummary || (actionItems && actionItems.length > 0)) && (
+        <div className="grid gap-6 lg:grid-cols-2">
+          {latestSummary && (
+            <div>
+              <h2 className="mb-4 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+                Previous Meeting Summary
+              </h2>
+              <MeetingSummary
+                summary={latestSummary}
+                actionItems={actionItems ?? []}
+                roomName={room.name}
+                roomGoal={room.goal}
+                meetingStartedAt={latestSummary.meeting?.startedAt}
+                meetingEndedAt={latestSummary.meeting?.endedAt}
+              />
+            </div>
+          )}
+
+          {actionItems && actionItems.length > 0 && (
+            <div>
+              <h2 className="mb-4 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+                Outstanding Action Items
+              </h2>
+              <ActionItemsPanel
+                actionItems={actionItems}
+                meetingId={latestSummary?.meeting?._id ?? null}
+              />
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

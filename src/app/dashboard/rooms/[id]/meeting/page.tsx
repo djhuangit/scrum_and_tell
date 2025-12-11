@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { useQuery, useMutation } from 'convex/react';
 import { useState, useCallback, useRef } from 'react';
 import { api } from '../../../../../../convex/_generated/api';
@@ -9,12 +9,12 @@ import { Id } from '../../../../../../convex/_generated/dataModel';
 import { AnamAvatar } from '@/components/avatar/AnamAvatar';
 import { ActionItemsPanel } from '@/components/meeting/ActionItemsPanel';
 import { TranscriptPanel } from '@/components/meeting/TranscriptPanel';
+import { MeetingSummary } from '@/components/meeting/MeetingSummary';
 import { useMeetingState } from '@/hooks/use-meeting-state';
 import { type AnamMessage, type AnamConnectionState } from '@/hooks/use-anam';
 
 export default function MeetingPage() {
   const params = useParams();
-  const router = useRouter();
   const roomId = params.id as Id<'rooms'>;
 
   const room = useQuery(api.rooms.get, { id: roomId });
@@ -23,16 +23,45 @@ export default function MeetingPage() {
     useState<AnamConnectionState>('idle');
 
   const meetingState = useMeetingState({ roomId });
+  const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
+  const [meetingEnded, setMeetingEnded] = useState(false);
+  const endedMeetingIdRef = useRef<Id<'meetings'> | null>(null);
+
+  // Use the ended meeting ID if available, otherwise use the active meeting ID
+  const effectiveMeetingId = endedMeetingIdRef.current ?? meetingState.state.meetingId;
+
   const actionItems = useQuery(
     api.actionItems.listByMeeting,
-    meetingState.state.meetingId
-      ? { meetingId: meetingState.state.meetingId }
+    effectiveMeetingId
+      ? { meetingId: effectiveMeetingId }
+      : 'skip'
+  );
+  const transcripts = useQuery(
+    api.transcripts.listByMeeting,
+    effectiveMeetingId
+      ? { meetingId: effectiveMeetingId }
+      : 'skip'
+  );
+  const speakerUpdates = useQuery(
+    api.speakerUpdates.listByMeeting,
+    effectiveMeetingId
+      ? { meetingId: effectiveMeetingId }
+      : 'skip'
+  );
+  const meetingSummary = useQuery(
+    api.summaries.getByMeeting,
+    effectiveMeetingId
+      ? { meetingId: effectiveMeetingId }
       : 'skip'
   );
 
   const createActionItems = useMutation(api.actionItems.createBatch);
   const createSpeakerUpdate = useMutation(api.speakerUpdates.create);
   const createTranscript = useMutation(api.transcripts.create);
+  const createSummary = useMutation(api.summaries.create);
+  const endMeetingMutation = useMutation(api.meetings.end);
+  const createMeetingMutation = useMutation(api.meetings.create);
+  const startMeetingMutation = useMutation(api.meetings.start);
 
   const processingRef = useRef(false);
 
@@ -94,20 +123,25 @@ export default function MeetingPage() {
         status: currentMeetingState.state.status,
       });
 
-      if (!currentMeetingState.state.meetingId) {
+      let meetingId = currentMeetingState.state.meetingId;
+
+      if (!meetingId) {
         console.log('[handleConnectionChange] Creating meeting...');
-        await currentMeetingState.createMeeting();
-        console.log('[handleConnectionChange] Meeting created');
+        // Use direct mutation to get the meeting ID immediately
+        meetingId = await createMeetingMutation({ roomId });
+        console.log('[handleConnectionChange] Meeting created with ID:', meetingId);
       }
-      if (currentMeetingState.state.status === 'lobby') {
+
+      // Always start the meeting using direct mutation with the ID we have
+      if (meetingId) {
         console.log('[handleConnectionChange] Starting meeting...');
-        await currentMeetingState.startMeeting();
+        await startMeetingMutation({ id: meetingId });
         console.log('[handleConnectionChange] Meeting started');
+        currentMeetingState.setActiveSubState('listening');
+        console.log('[handleConnectionChange] Set to listening state');
       }
-      currentMeetingState.setActiveSubState('listening');
-      console.log('[handleConnectionChange] Set to listening state');
     }
-  }, []); // Stable - uses refs
+  }, [createMeetingMutation, startMeetingMutation, roomId]);
 
   async function processUserTurn(message: AnamMessage) {
     const currentMeetingState = meetingStateRef.current;
@@ -202,9 +236,92 @@ export default function MeetingPage() {
   }
 
   const handleEndMeeting = useCallback(async () => {
-    await meetingState.endMeeting();
-    router.push(`/dashboard/rooms/${roomId}`);
-  }, [meetingState, router, roomId]);
+    console.log('[handleEndMeeting] Called');
+    const currentMeetingId = meetingStateRef.current.state.meetingId;
+    const currentRoom = roomRef.current;
+
+    console.log('[handleEndMeeting] Meeting ID:', currentMeetingId);
+    console.log('[handleEndMeeting] Room:', currentRoom?.name);
+
+    if (!currentMeetingId) {
+      console.error('[handleEndMeeting] No meeting ID available');
+      return;
+    }
+
+    console.log('[handleEndMeeting] Setting isGeneratingSummary to true');
+    setIsGeneratingSummary(true);
+
+    try {
+      console.log('[handleEndMeeting] Calling summary API...');
+      const response = await fetch(
+        `/api/meetings/${currentMeetingId}/summary`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            transcripts:
+              transcripts?.map((t) => ({
+                speakerName: t.speakerName,
+                text: t.text,
+              })) ?? [],
+            speakerUpdates:
+              speakerUpdates?.map((u) => ({
+                speakerName: u.speakerName,
+                summary: u.summary,
+                risks: u.risks,
+                gaps: u.gaps,
+                proposedActions: u.proposedActions,
+              })) ?? [],
+            actionItems:
+              actionItems?.map((a) => ({
+                task: a.task,
+                owner: a.owner,
+                status: a.status,
+              })) ?? [],
+            roomGoal: currentRoom?.goal,
+            roomContext: currentRoom?.contextSummary,
+          }),
+        }
+      );
+
+      console.log('[handleEndMeeting] Summary API response status:', response.status);
+
+      if (response.ok) {
+        const summaryData = await response.json();
+        console.log('[handleEndMeeting] Summary data received:', summaryData);
+        await createSummary({
+          meetingId: currentMeetingId,
+          overview: summaryData.overview,
+          decisions: summaryData.decisions || [],
+          risks: summaryData.risks || [],
+          nextSteps: summaryData.nextSteps || [],
+        });
+        console.log('[handleEndMeeting] Summary saved to Convex');
+      } else {
+        const errorText = await response.text();
+        console.error('[handleEndMeeting] Summary API error:', errorText);
+      }
+    } catch (error) {
+      console.error('[handleEndMeeting] Failed to generate summary:', error);
+    } finally {
+      setIsGeneratingSummary(false);
+    }
+
+    console.log('[handleEndMeeting] Ending meeting...');
+    // Store the meeting ID before ending so we can still query for it
+    endedMeetingIdRef.current = currentMeetingId;
+    // Use direct mutation with captured ID to avoid hook state sync issues
+    await endMeetingMutation({ id: currentMeetingId });
+    // Set local state to show the ended view
+    setMeetingEnded(true);
+    console.log('[handleEndMeeting] Meeting ended');
+  }, [
+    transcripts,
+    speakerUpdates,
+    actionItems,
+    createSummary,
+    endMeetingMutation,
+  ]);
 
   if (room === undefined) {
     return (
@@ -237,7 +354,7 @@ export default function MeetingPage() {
     : `Meeting: ${room.name}\nGoal: ${room.goal || 'Not specified'}`;
 
   const getStatusText = () => {
-    if (meetingState.state.status === 'ended') return 'Meeting ended';
+    if (meetingEnded) return 'Meeting ended';
     if (meetingState.state.status === 'active') {
       switch (meetingState.state.activeSubState) {
         case 'listening': return 'Listening...';
@@ -263,13 +380,13 @@ export default function MeetingPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {connectionState === 'connected' && (
+          {connectionState === 'connected' && !meetingEnded && (
             <button
               onClick={handleEndMeeting}
-              disabled={meetingState.isLoading}
+              disabled={meetingState.isLoading || isGeneratingSummary}
               className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-50"
             >
-              End Meeting
+              {isGeneratingSummary ? 'Generating Summary...' : 'End Meeting'}
             </button>
           )}
           <Link
@@ -281,56 +398,83 @@ export default function MeetingPage() {
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="space-y-6 lg:col-span-2">
-          <AnamAvatar
-            roomContext={roomContext}
-            onMessage={handleMessage}
-            onConnectionChange={handleConnectionChange}
-          />
+      {meetingEnded ? (
+        <div className="grid gap-6 lg:grid-cols-3">
+          <div className="space-y-6 lg:col-span-2">
+            <MeetingSummary
+              summary={meetingSummary}
+              actionItems={actionItems ?? []}
+              roomName={room.name}
+              roomGoal={room.goal}
+              isLoading={isGeneratingSummary}
+            />
+          </div>
 
-          <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
-            <h3 className="font-medium text-zinc-900 dark:text-zinc-50">
-              Voice Input
-            </h3>
-            <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-              {connectionState === 'connected'
-                ? 'Speak to the avatar - your microphone is active when unmuted.'
-                : 'Connect to the avatar to start voice interaction.'}
-            </p>
-            {connectionState === 'connected' && (
-              <div className="mt-4 flex items-center gap-2 rounded-lg bg-green-50 p-3 text-sm text-green-700 dark:bg-green-900/20 dark:text-green-400">
-                <svg
-                  className="h-4 w-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth={2}
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z"
-                  />
-                </svg>
-                Voice input active - speak naturally to interact
-              </div>
-            )}
+          <div className="space-y-6">
+            <ActionItemsPanel
+              actionItems={actionItems ?? []}
+              meetingId={effectiveMeetingId}
+              isReadOnly
+            />
+
+            <TranscriptPanel
+              messages={messages}
+              isConnected={false}
+            />
           </div>
         </div>
+      ) : (
+        <div className="grid gap-6 lg:grid-cols-3">
+          <div className="space-y-6 lg:col-span-2">
+            <AnamAvatar
+              roomContext={roomContext}
+              onMessage={handleMessage}
+              onConnectionChange={handleConnectionChange}
+            />
 
-        <div className="space-y-6">
-          <ActionItemsPanel
-            actionItems={actionItems ?? []}
-            meetingId={meetingState.state.meetingId}
-          />
+            <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
+              <h3 className="font-medium text-zinc-900 dark:text-zinc-50">
+                Voice Input
+              </h3>
+              <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+                {connectionState === 'connected'
+                  ? 'Speak to the avatar - your microphone is active when unmuted.'
+                  : 'Connect to the avatar to start voice interaction.'}
+              </p>
+              {connectionState === 'connected' && (
+                <div className="mt-4 flex items-center gap-2 rounded-lg bg-green-50 p-3 text-sm text-green-700 dark:bg-green-900/20 dark:text-green-400">
+                  <svg
+                    className="h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={2}
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z"
+                    />
+                  </svg>
+                  Voice input active - speak naturally to interact
+                </div>
+              )}
+            </div>
+          </div>
 
-          <TranscriptPanel
-            messages={messages}
-            isConnected={connectionState === 'connected'}
-          />
+          <div className="space-y-6">
+            <ActionItemsPanel
+              actionItems={actionItems ?? []}
+              meetingId={meetingState.state.meetingId}
+            />
+
+            <TranscriptPanel
+              messages={messages}
+              isConnected={connectionState === 'connected'}
+            />
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

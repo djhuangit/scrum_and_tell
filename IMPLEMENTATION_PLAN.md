@@ -6,35 +6,26 @@
 
 ## Session Summary (for continuing work)
 
-**Phases 1-3, 5 COMPLETE.** Voice meeting app with Anam AI avatar that reads documents and facilitates standups.
+**Phases 1-3, 5-6 COMPLETE. Next: Phase 7 (Polish & Deployment).**
 
-**Working features:**
-- Auth (Clerk) + Database (Convex) + Room CRUD
-- Document upload (DOCX/TXT/PPTX) with AI summarisation
-- Anam avatar with voice interaction (STT built-in via Anam)
-- Meeting page with avatar, transcript, and action items panel
-- Meeting state machine (lobby -> active -> ended)
-- Real-time action items with framer-motion animations
-- Speaker turn processing with LLM (summary, risks, actions)
-- Convex mutations for meetings, transcripts, action items, speaker updates
+Voice meeting app with Anam AI avatar. Users create rooms, upload documents, get AI summaries, then run voice meetings with real-time action item extraction and meeting summaries.
 
-**Key flow:**
-1. User creates room, uploads documents, generates context summary
-2. User clicks "Start Meeting" -> navigates to meeting page
-3. User clicks "Connect Avatar" -> meeting auto-creates and starts
-4. User speaks -> Anam STT transcribes -> processUserTurn calls OpenAI -> extracts action items -> saves to Convex -> UI updates in real-time
-5. Action items only created when user states explicit tasks (e.g., "Sarah needs to review the code by Friday")
+**Tech:** Next.js 14 + Clerk auth + Convex DB + Anam AI avatar + OpenAI GPT-4o-mini
 
-**Key config:**
-- Clerk JWT template "convex" required
-- Env vars in `.env.local` AND Convex (`npx convex env set`)
-- Anam llmId: `ANAM_GPT_4O_MINI_V1`
+**Quick start:** `npm run dev` + `npx convex dev` (needs `.env.local` with Clerk, Convex, Anam, OpenAI keys)
 
-**Important implementation notes:**
-- Callbacks passed to AnamAvatar must be stable (use refs, empty dependency arrays) or avatar disconnects on re-render
-- Debug logging exists in meeting page - can be removed for production
+**Key files:**
+- Meeting page: `src/app/dashboard/rooms/[id]/meeting/page.tsx`
+- Room lobby: `src/app/dashboard/rooms/[id]/page.tsx`
+- Convex mutations: `convex/` (meetings, actionItems, summaries, transcripts, speakerUpdates)
+- APIs: `src/app/api/meetings/[id]/` (process-turn, summary)
 
-**Next: Phase 6** - Meeting Summary & Export (Phase 4 skipped - Anam provides built-in STT)
+**Implementation notes:**
+- AnamAvatar callbacks must use refs for stability (see `meetingStateRef`, `roomRef`)
+- Meeting state tracked locally with `meetingEnded` + `endedMeetingIdRef` (Convex `getActive` returns null for ended meetings)
+- Direct mutations used for create/start/end meeting to avoid query sync delays
+
+**Next: Phase 7** - Error handling, loading states, accessibility, Vercel deployment
 
 ---
 
@@ -50,7 +41,9 @@
 
 **Phase 5: COMPLETE** - Meeting Flow & State Machine - state machine hook, process-turn API, action items panel, transcript panel, meeting controls.
 
-**Next: Phase 6** - Meeting Summary & Export
+**Phase 6: COMPLETE** - Meeting Summary & Export - summary API, MeetingSummary component, copy-to-clipboard, room lobby integration.
+
+**Next: Phase 7** - Polish & Deployment
 
 ### What's Done
 - Next.js app with TypeScript, Tailwind, App Router
@@ -74,11 +67,15 @@
 - Convex action items mutations (`convex/actionItems.ts`)
 - Convex transcripts mutations (`convex/transcripts.ts`)
 - Convex speaker updates mutations (`convex/speakerUpdates.ts`)
+- Convex summaries mutations (`convex/summaries.ts`)
 - Process turn API for LLM speaker analysis (`src/app/api/meetings/[id]/process-turn/route.ts`)
+- Summary generation API for meeting summaries (`src/app/api/meetings/[id]/summary/route.ts`)
 - ActionItemsPanel with framer-motion animations (`src/components/meeting/ActionItemsPanel.tsx`)
 - TranscriptPanel component (`src/components/meeting/TranscriptPanel.tsx`)
 - MeetingControls component (`src/components/meeting/MeetingControls.tsx`)
-- Full meeting page with state machine, real-time action items, and controls
+- MeetingSummary component with copy-to-clipboard (`src/components/meeting/MeetingSummary.tsx`)
+- Full meeting page with state machine, real-time action items, summary generation, and controls
+- Room lobby with previous meeting summary and outstanding action items display
 
 ### Key Files
 - `src/app/dashboard/` - authenticated pages
@@ -90,6 +87,7 @@
 - `convex/actionItems.ts` - action items CRUD
 - `convex/transcripts.ts` - transcript storage
 - `convex/speakerUpdates.ts` - speaker update storage
+- `convex/summaries.ts` - meeting summaries CRUD
 - `convex/ai.ts` - OpenAI integration for summarisation
 - `src/lib/document-processor.ts` - DOCX/PPTX/TXT text extraction (no PDF)
 - `src/hooks/use-sync-user.ts` - auto-sync user on dashboard load
@@ -97,11 +95,14 @@
 - `src/hooks/use-meeting-state.ts` - Meeting state machine hook
 - `src/app/api/anam/session/route.ts` - Anam session token generation
 - `src/app/api/meetings/[id]/process-turn/route.ts` - LLM speaker turn processing
+- `src/app/api/meetings/[id]/summary/route.ts` - LLM meeting summary generation
 - `src/components/avatar/AnamAvatar.tsx` - Avatar component with controls
 - `src/components/meeting/ActionItemsPanel.tsx` - Animated action items list
 - `src/components/meeting/TranscriptPanel.tsx` - Meeting transcript display
 - `src/components/meeting/MeetingControls.tsx` - Meeting control buttons
-- `src/app/dashboard/rooms/[id]/meeting/page.tsx` - Full meeting page
+- `src/components/meeting/MeetingSummary.tsx` - Meeting summary with copy-to-clipboard
+- `src/app/dashboard/rooms/[id]/meeting/page.tsx` - Full meeting page with summary
+- `src/app/dashboard/rooms/[id]/page.tsx` - Room lobby with past summary display
 
 ### Environment Setup Notes
 - Clerk JWT Template named "convex" with `{"aud": "convex"}` required
@@ -667,14 +668,14 @@ Generate comprehensive meeting summaries and export options.
 ### Success Criteria
 
 #### Automated Verification:
-- [ ] Summary API returns structured JSON
-- [ ] Convex stores summary correctly
+- [x] Summary API returns structured JSON
+- [x] Convex stores summary correctly
 
 #### Manual Verification:
-- [ ] End meeting triggers summary generation
-- [ ] Avatar reads summary aloud
-- [ ] Copy to clipboard works
-- [ ] Returning to room shows previous summary
+- [x] End meeting triggers summary generation
+- [x] Avatar reads summary aloud
+- [x] Copy to clipboard works
+- [x] Returning to room shows previous summary
 
 ---
 

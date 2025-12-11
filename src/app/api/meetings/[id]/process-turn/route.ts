@@ -14,9 +14,18 @@ const PROCESS_TURN_SYSTEM_PROMPT = `You are a meeting facilitator assistant. You
 
 Given a transcript of what the speaker said, extract:
 1. A brief summary of their update (1-2 sentences)
-2. Any risks or blockers they mentioned
+2. Any risks or blockers they mentioned (even implied ones)
 3. Any gaps or uncertainties identified
-4. Proposed action items with owners (if mentioned)
+4. Action items - be proactive about identifying these!
+
+IMPORTANT for action items: Extract action items whenever someone mentions:
+- Tasks they need to do ("I need to...", "I'll...", "I have to...")
+- Tasks for others ("We should...", "Someone needs to...", "The team will...")
+- Work in progress that needs completion ("Still working on...", "Need to finish...")
+- Commitments or promises ("I'll have that done by...", "Will send that over...")
+- Any implied work or follow-ups from the discussion
+
+If a name is mentioned with the task, use that as the owner. Otherwise, use the speaker's name or "Team" for group tasks.
 
 Respond in JSON format with this structure:
 {
@@ -24,12 +33,12 @@ Respond in JSON format with this structure:
   "risks": ["Risk 1", "Risk 2"],
   "gaps": ["Gap or uncertainty 1"],
   "proposedActions": [
-    { "task": "Action item description", "owner": "Owner name or 'Unassigned'" }
+    { "task": "Action item description", "owner": "Owner name or speaker name" }
   ],
   "agentResponse": "A natural response the facilitator should say to acknowledge and follow up"
 }
 
-Keep the summary concise. Only include items in arrays if explicitly mentioned. The agentResponse should be conversational and either:
+Keep the summary concise. Be proactive about extracting action items - it's better to capture potential tasks than miss them. The agentResponse should be conversational and either:
 - Acknowledge what was said and ask a follow-up question
 - Confirm understanding and summarise key points
 - Ask for clarification if the update was unclear`;
