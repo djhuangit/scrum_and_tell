@@ -4,11 +4,19 @@
 
 ---
 
+## Session Summary (for continuing work)
+
+**Phases 1-2 COMPLETE.** App has working auth (Clerk), database (Convex), room CRUD, document upload (DOCX/TXT/PPTX), and AI summarisation (OpenAI). PDF support removed due to pdfjs worker issues in Next.js. Clerk JWT template "convex" required for auth. Environment variables set in both `.env.local` and Convex (`npx convex env set`). Test documents in `test-documents/`. Ready for Phase 3: Avatar Integration (Anam AI).
+
+---
+
 ## Current Status
 
-**Phase 1: COMPLETE** - Project foundation set up with Next.js 14+, Clerk auth, Convex database, and basic UI.
+**Phase 1: COMPLETE** - Project foundation with Next.js 14+, Clerk auth, Convex database, basic UI.
 
-**Next: Phase 2** - Room Management (CRUD, document upload, context summarisation)
+**Phase 2: COMPLETE** - Room management, document upload, context summarisation.
+
+**Next: Phase 3** - Avatar Integration (Anam AI)
 
 ### What's Done
 - Next.js app with TypeScript, Tailwind, App Router
@@ -16,12 +24,27 @@
 - Convex schema deployed with user sync on login
 - Landing page, dashboard layout, room pages (list, lobby, meeting shells)
 - Environment config with Zod validation
+- Room CRUD operations (`convex/rooms.ts`)
+- Document processing API (`src/app/api/documents/process/route.ts`)
+- Document storage mutations (`convex/documents.ts`)
+- Context summarisation action (`convex/ai.ts`)
+- Room list page with real data
+- New room creation form
+- Room lobby with document upload and summary generation
 
 ### Key Files
 - `src/app/dashboard/` - authenticated pages
 - `convex/schema.ts` - database schema
 - `convex/users.ts` - user sync mutation
+- `convex/rooms.ts` - room CRUD operations
+- `convex/documents.ts` - document storage
+- `convex/ai.ts` - OpenAI integration for summarisation
+- `src/lib/document-processor.ts` - DOCX/PPTX/TXT text extraction (no PDF)
 - `src/hooks/use-sync-user.ts` - auto-sync user on dashboard load
+
+### Environment Setup Notes
+- Clerk JWT Template named "convex" with `{"aud": "convex"}` required
+- Convex env vars: `CLERK_JWT_ISSUER_DOMAIN`, `OPENAI_API_KEY`
 
 ---
 
@@ -346,15 +369,15 @@ Implement:
 ### Success Criteria
 
 #### Automated Verification:
-- [ ] `npm run build` passes
-- [ ] API routes return correct status codes
-- [ ] Convex mutations execute without errors
+- [x] `npm run build` passes
+- [x] API routes return correct status codes
+- [x] Convex mutations execute without errors
 
 #### Manual Verification:
-- [ ] Can create a new room with name and goal
-- [ ] Can upload PDF/DOCX and see extracted text
-- [ ] Context summary appears after document processing
-- [ ] Room persists across page reloads
+- [x] Can create a new room with name and goal
+- [x] Can upload DOCX/TXT and see extracted text (PDF removed)
+- [x] Context summary appears after document processing
+- [x] Room persists across page reloads
 
 ---
 

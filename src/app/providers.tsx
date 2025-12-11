@@ -13,24 +13,16 @@ interface ProvidersProps {
   children: ReactNode;
 }
 
-function ConvexClientProvider({ children }: ProvidersProps) {
-  const auth = useAuth();
-
-  if (!convex) {
-    return <>{children}</>;
-  }
-
-  return (
-    <ConvexProviderWithClerk client={convex} useAuth={() => auth}>
-      {children}
-    </ConvexProviderWithClerk>
-  );
-}
-
 export function Providers({ children }: ProvidersProps) {
   return (
     <ClerkProvider>
-      <ConvexClientProvider>{children}</ConvexClientProvider>
+      {convex ? (
+        <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
+          {children}
+        </ConvexProviderWithClerk>
+      ) : (
+        children
+      )}
     </ClerkProvider>
   );
 }
