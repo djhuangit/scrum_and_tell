@@ -1,0 +1,37 @@
+{
+  "name": "scrum_and_tell",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "@ai-sdk/openai": "^2.0.80",
+    "@anam-ai/js-sdk": "^4.7.0",
+    "@clerk/nextjs": "^6.36.2",
+    "@elevenlabs/elevenlabs-js": "^2.27.0",
+    "ai": "^5.0.110",
+    "convex": "^1.31.0",
+    "framer-motion": "^12.23.26",
+    "mammoth": "^1.11.0",
+    "next": "16.0.8",
+    "pdf-parse": "^2.4.5",
+    "react": "19.2.1",
+    "react-dom": "19.2.1",
+    "zod": "^4.1.13"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/pdf-parse": "^1.1.5",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.0.8",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}
