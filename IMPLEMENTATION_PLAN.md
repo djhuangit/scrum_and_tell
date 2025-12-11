@@ -6,7 +6,20 @@
 
 ## Session Summary (for continuing work)
 
-**Phases 1-2 COMPLETE.** App has working auth (Clerk), database (Convex), room CRUD, document upload (DOCX/TXT/PPTX), and AI summarisation (OpenAI). PDF support removed due to pdfjs worker issues in Next.js. Clerk JWT template "convex" required for auth. Environment variables set in both `.env.local` and Convex (`npx convex env set`). Test documents in `test-documents/`. Ready for Phase 3: Avatar Integration (Anam AI).
+**Phases 1-3 COMPLETE.** Voice meeting app with Anam AI avatar that reads documents and facilitates standups.
+
+**Working features:**
+- Auth (Clerk) + Database (Convex) + Room CRUD
+- Document upload (DOCX/TXT/PPTX) with AI summarisation
+- Anam avatar with voice interaction (STT built-in via Anam)
+- Meeting page displays avatar, transcript, and action items panel
+
+**Key config:**
+- Clerk JWT template "convex" required
+- Env vars in `.env.local` AND Convex (`npx convex env set`)
+- Anam llmId: `ANAM_GPT_4O_MINI_V1`
+
+**Next: Phase 5** - Meeting Flow & State Machine (Phase 4 skipped - Anam provides built-in STT)
 
 ---
 
@@ -16,7 +29,11 @@
 
 **Phase 2: COMPLETE** - Room management, document upload, context summarisation.
 
-**Next: Phase 3** - Avatar Integration (Anam AI)
+**Phase 3: COMPLETE** - Avatar Integration (Anam AI) - session API, AnamAvatar component, use-anam hook.
+
+**Phase 4: SKIPPED** - Anam provides built-in STT, no additional pipeline needed.
+
+**Next: Phase 5** - Meeting Flow & State Machine
 
 ### What's Done
 - Next.js app with TypeScript, Tailwind, App Router
@@ -31,6 +48,10 @@
 - Room list page with real data
 - New room creation form
 - Room lobby with document upload and summary generation
+- Anam AI session API (`src/app/api/anam/session/route.ts`)
+- AnamAvatar component with connection controls (`src/components/avatar/AnamAvatar.tsx`)
+- useAnam hook for avatar lifecycle management (`src/hooks/use-anam.ts`)
+- Meeting page integration with avatar and transcript display
 
 ### Key Files
 - `src/app/dashboard/` - authenticated pages
@@ -41,6 +62,10 @@
 - `convex/ai.ts` - OpenAI integration for summarisation
 - `src/lib/document-processor.ts` - DOCX/PPTX/TXT text extraction (no PDF)
 - `src/hooks/use-sync-user.ts` - auto-sync user on dashboard load
+- `src/app/api/anam/session/route.ts` - Anam session token generation
+- `src/components/avatar/AnamAvatar.tsx` - Avatar component with controls
+- `src/hooks/use-anam.ts` - Avatar connection lifecycle hook
+- `src/app/dashboard/rooms/[id]/meeting/page.tsx` - Meeting page with avatar
 
 ### Environment Setup Notes
 - Clerk JWT Template named "convex" with `{"aud": "convex"}` required
@@ -452,13 +477,13 @@ export function AnamAvatar({ sessionToken, personaId, onMessage }: AnamAvatarPro
 ### Success Criteria
 
 #### Automated Verification:
-- [ ] Anam SDK imports without errors
-- [ ] Session API returns valid token
+- [x] Anam SDK imports without errors
+- [x] Session API returns valid token
 
 #### Manual Verification:
-- [ ] Avatar renders in meeting screen
-- [ ] Avatar responds to voice input
-- [ ] Avatar speaks meeting context on start
+- [x] Avatar renders in meeting screen
+- [x] Avatar responds to voice input
+- [x] Avatar speaks meeting context on start
 
 ---
 
