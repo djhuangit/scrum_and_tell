@@ -6,20 +6,35 @@
 
 ## Session Summary (for continuing work)
 
-**Phases 1-3 COMPLETE.** Voice meeting app with Anam AI avatar that reads documents and facilitates standups.
+**Phases 1-3, 5 COMPLETE.** Voice meeting app with Anam AI avatar that reads documents and facilitates standups.
 
 **Working features:**
 - Auth (Clerk) + Database (Convex) + Room CRUD
 - Document upload (DOCX/TXT/PPTX) with AI summarisation
 - Anam avatar with voice interaction (STT built-in via Anam)
-- Meeting page displays avatar, transcript, and action items panel
+- Meeting page with avatar, transcript, and action items panel
+- Meeting state machine (lobby -> active -> ended)
+- Real-time action items with framer-motion animations
+- Speaker turn processing with LLM (summary, risks, actions)
+- Convex mutations for meetings, transcripts, action items, speaker updates
+
+**Key flow:**
+1. User creates room, uploads documents, generates context summary
+2. User clicks "Start Meeting" -> navigates to meeting page
+3. User clicks "Connect Avatar" -> meeting auto-creates and starts
+4. User speaks -> Anam STT transcribes -> processUserTurn calls OpenAI -> extracts action items -> saves to Convex -> UI updates in real-time
+5. Action items only created when user states explicit tasks (e.g., "Sarah needs to review the code by Friday")
 
 **Key config:**
 - Clerk JWT template "convex" required
 - Env vars in `.env.local` AND Convex (`npx convex env set`)
 - Anam llmId: `ANAM_GPT_4O_MINI_V1`
 
-**Next: Phase 5** - Meeting Flow & State Machine (Phase 4 skipped - Anam provides built-in STT)
+**Important implementation notes:**
+- Callbacks passed to AnamAvatar must be stable (use refs, empty dependency arrays) or avatar disconnects on re-render
+- Debug logging exists in meeting page - can be removed for production
+
+**Next: Phase 6** - Meeting Summary & Export (Phase 4 skipped - Anam provides built-in STT)
 
 ---
 
@@ -33,7 +48,9 @@
 
 **Phase 4: SKIPPED** - Anam provides built-in STT, no additional pipeline needed.
 
-**Next: Phase 5** - Meeting Flow & State Machine
+**Phase 5: COMPLETE** - Meeting Flow & State Machine - state machine hook, process-turn API, action items panel, transcript panel, meeting controls.
+
+**Next: Phase 6** - Meeting Summary & Export
 
 ### What's Done
 - Next.js app with TypeScript, Tailwind, App Router
@@ -52,6 +69,16 @@
 - AnamAvatar component with connection controls (`src/components/avatar/AnamAvatar.tsx`)
 - useAnam hook for avatar lifecycle management (`src/hooks/use-anam.ts`)
 - Meeting page integration with avatar and transcript display
+- Meeting state machine hook (`src/hooks/use-meeting-state.ts`)
+- Convex meetings mutations (`convex/meetings.ts`)
+- Convex action items mutations (`convex/actionItems.ts`)
+- Convex transcripts mutations (`convex/transcripts.ts`)
+- Convex speaker updates mutations (`convex/speakerUpdates.ts`)
+- Process turn API for LLM speaker analysis (`src/app/api/meetings/[id]/process-turn/route.ts`)
+- ActionItemsPanel with framer-motion animations (`src/components/meeting/ActionItemsPanel.tsx`)
+- TranscriptPanel component (`src/components/meeting/TranscriptPanel.tsx`)
+- MeetingControls component (`src/components/meeting/MeetingControls.tsx`)
+- Full meeting page with state machine, real-time action items, and controls
 
 ### Key Files
 - `src/app/dashboard/` - authenticated pages
@@ -59,13 +86,22 @@
 - `convex/users.ts` - user sync mutation
 - `convex/rooms.ts` - room CRUD operations
 - `convex/documents.ts` - document storage
+- `convex/meetings.ts` - meeting lifecycle (create, start, pause, end)
+- `convex/actionItems.ts` - action items CRUD
+- `convex/transcripts.ts` - transcript storage
+- `convex/speakerUpdates.ts` - speaker update storage
 - `convex/ai.ts` - OpenAI integration for summarisation
 - `src/lib/document-processor.ts` - DOCX/PPTX/TXT text extraction (no PDF)
 - `src/hooks/use-sync-user.ts` - auto-sync user on dashboard load
-- `src/app/api/anam/session/route.ts` - Anam session token generation
-- `src/components/avatar/AnamAvatar.tsx` - Avatar component with controls
 - `src/hooks/use-anam.ts` - Avatar connection lifecycle hook
-- `src/app/dashboard/rooms/[id]/meeting/page.tsx` - Meeting page with avatar
+- `src/hooks/use-meeting-state.ts` - Meeting state machine hook
+- `src/app/api/anam/session/route.ts` - Anam session token generation
+- `src/app/api/meetings/[id]/process-turn/route.ts` - LLM speaker turn processing
+- `src/components/avatar/AnamAvatar.tsx` - Avatar component with controls
+- `src/components/meeting/ActionItemsPanel.tsx` - Animated action items list
+- `src/components/meeting/TranscriptPanel.tsx` - Meeting transcript display
+- `src/components/meeting/MeetingControls.tsx` - Meeting control buttons
+- `src/app/dashboard/rooms/[id]/meeting/page.tsx` - Full meeting page
 
 ### Environment Setup Notes
 - Clerk JWT Template named "convex" with `{"aud": "convex"}` required
@@ -585,14 +621,14 @@ Pipeline:
 ### Success Criteria
 
 #### Automated Verification:
-- [ ] State transitions work correctly
-- [ ] API processes transcripts and returns structured data
+- [x] State transitions work correctly
+- [x] API processes transcripts and returns structured data
 
 #### Manual Verification:
-- [ ] Meeting starts with avatar greeting
-- [ ] Record button captures speech
-- [ ] Avatar responds with confirmation
-- [ ] Action items appear in real-time
+- [x] Meeting starts with avatar greeting
+- [x] Record button captures speech (voice input via Anam STT)
+- [x] Avatar responds with confirmation
+- [x] Action items appear in real-time
 
 ---
 
