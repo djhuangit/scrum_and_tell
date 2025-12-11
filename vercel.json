@@ -1,0 +1,15 @@
+{
+  "framework": "nextjs",
+  "regions": ["iad1"],
+  "functions": {
+    "app/api/documents/**": {
+      "maxDuration": 60
+    },
+    "app/api/transcribe/**": {
+      "maxDuration": 60
+    },
+    "app/api/anam/**": {
+      "maxDuration": 30
+    }
+  }
+}
