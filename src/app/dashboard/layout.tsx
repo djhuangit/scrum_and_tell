@@ -64,7 +64,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             >
               Rooms
             </Link>
-            <UserButton fallbackRedirectUrl="/" />
+            <UserButton />
           </nav>
         </div>
       </header>
