@@ -20,12 +20,10 @@ interface AnamSessionResponse {
   sessionToken: string;
 }
 
-const ANAM_DEFAULT_VOICE_ID = '6bfbe25a-979d-40f3-a92b-5394170af54b';
-
 const DEFAULT_PERSONA: PersonaConfig = {
   name: 'Scrum & Tell Facilitator',
   avatarId: '30fa96d0-26c4-4e55-94a0-517025942e18',
-  voiceId: process.env.ELEVENLABS_VOICE_ID || ANAM_DEFAULT_VOICE_ID,
+  voiceId: '6bfbe25a-979d-40f3-a92b-5394170af54b',
   llmId: 'ANAM_GPT_4O_MINI_V1',
   maxSessionLengthSeconds: 3600,
 };
