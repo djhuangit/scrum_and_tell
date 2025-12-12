@@ -79,9 +79,8 @@ export default function MeetingPage() {
       const existing = prev.find((m) => m.id === message.id);
       if (existing) {
         // Accumulate content for streaming messages (SDK sends incremental text)
-        const accumulatedContent = message.content
-          ? existing.content + (existing.content && message.content ? ' ' : '') + message.content
-          : existing.content;
+        // Concatenate directly - SDK includes proper spacing in chunks
+        const accumulatedContent = existing.content + (message.content || '');
         return prev.map((m) =>
           m.id === message.id
             ? { ...message, content: accumulatedContent }
