@@ -8,6 +8,7 @@ import { Id } from '../../../../../convex/_generated/dataModel';
 import { useState, useRef, useCallback } from 'react';
 import { MeetingSummary } from '@/components/meeting/MeetingSummary';
 import { ActionItemsPanel } from '@/components/meeting/ActionItemsPanel';
+import { useToast } from '@/components/ui/toast';
 
 interface DocumentItemProps {
   id: Id<'documents'>;
@@ -87,6 +88,7 @@ function DocumentItem({
 export default function RoomLobbyPage() {
   const params = useParams();
   const roomId = params.id as Id<'rooms'>;
+  const { addToast } = useToast();
 
   const room = useQuery(api.rooms.get, { id: roomId });
   const documents = useQuery(api.documents.listByRoom, { roomId });
@@ -102,7 +104,6 @@ export default function RoomLobbyPage() {
   const [deletingDocId, setDeletingDocId] = useState<Id<'documents'> | null>(
     null
   );
-  const [error, setError] = useState<string | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -111,16 +112,13 @@ export default function RoomLobbyPage() {
       if (!files || files.length === 0) return;
 
       setIsUploading(true);
-      setError(null);
 
       try {
         for (const file of Array.from(files)) {
-          // Validate file size
           if (file.size > 10 * 1024 * 1024) {
             throw new Error(`File ${file.name} exceeds 10MB limit`);
           }
 
-          // Process document through API
           const formData = new FormData();
           formData.append('file', file);
 
@@ -136,7 +134,6 @@ export default function RoomLobbyPage() {
 
           const processedData = await processResponse.json();
 
-          // Upload file to Convex storage
           const uploadUrl = await generateUploadUrl();
 
           const uploadResponse = await fetch(uploadUrl, {
@@ -151,7 +148,6 @@ export default function RoomLobbyPage() {
 
           const { storageId } = await uploadResponse.json();
 
-          // Create document record
           await createDocument({
             roomId,
             filename: file.name,
@@ -161,8 +157,12 @@ export default function RoomLobbyPage() {
             chunks: processedData.chunks,
           });
         }
+        addToast('Documents uploaded successfully', 'success');
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Upload failed');
+        addToast(
+          err instanceof Error ? err.message : 'Upload failed',
+          'error'
+        );
       } finally {
         setIsUploading(false);
         if (fileInputRef.current) {
@@ -170,7 +170,7 @@ export default function RoomLobbyPage() {
         }
       }
     },
-    [roomId, generateUploadUrl, createDocument]
+    [roomId, generateUploadUrl, createDocument, addToast]
   );
 
   const handleDrop = useCallback(
@@ -196,9 +196,11 @@ export default function RoomLobbyPage() {
     setDeletingDocId(id);
     try {
       await deleteDocument({ id });
+      addToast('Document deleted', 'success');
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : 'Failed to delete document'
+      addToast(
+        err instanceof Error ? err.message : 'Failed to delete document',
+        'error'
       );
     } finally {
       setDeletingDocId(null);
@@ -207,12 +209,13 @@ export default function RoomLobbyPage() {
 
   const handleGenerateSummary = async () => {
     setIsSummarising(true);
-    setError(null);
     try {
       await summariseDocuments({ roomId });
+      addToast('Summary generated successfully', 'success');
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : 'Failed to generate summary'
+      addToast(
+        err instanceof Error ? err.message : 'Failed to generate summary',
+        'error'
       );
     } finally {
       setIsSummarising(false);
@@ -298,12 +301,6 @@ export default function RoomLobbyPage() {
             {room.status.charAt(0).toUpperCase() + room.status.slice(1)}
           </span>
         </div>
-
-        {error && (
-          <div className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-400">
-            {error}
-          </div>
-        )}
 
         <div className="mt-6 space-y-4">
           {/* Context Summary */}

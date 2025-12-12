@@ -7,8 +7,10 @@ interface AnamAvatarProps {
   roomContext?: string;
   onMessage?: (message: AnamMessage) => void;
   onConnectionChange?: (state: AnamConnectionState) => void;
+  onSendMessage?: (content: string) => void;
   autoConnect?: boolean;
   className?: string;
+  isSpeaking?: boolean;
 }
 
 /**
@@ -19,12 +21,15 @@ export function AnamAvatar({
   roomContext,
   onMessage,
   onConnectionChange,
+  onSendMessage,
   autoConnect = false,
   className = '',
+  isSpeaking = false,
 }: AnamAvatarProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [error, setError] = useState<string | null>(null);
   const hasConnectedRef = useRef(false);
+  const [textInput, setTextInput] = useState('');
 
   const {
     connectionState,
@@ -35,11 +40,24 @@ export function AnamAvatar({
     disconnect,
     toggleMute,
     interrupt,
+    sendMessage,
   } = useAnam({
     onMessage,
     onConnectionChange,
     onError: (err) => setError(err.message),
   });
+
+  const handleTextSubmit = useCallback(
+    (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!textInput.trim() || !isConnected) return;
+
+      sendMessage(textInput.trim());
+      onSendMessage?.(textInput.trim());
+      setTextInput('');
+    },
+    [textInput, isConnected, sendMessage, onSendMessage]
+  );
 
   const handleConnect = useCallback(async () => {
     if (!videoRef.current) {
@@ -86,7 +104,22 @@ export function AnamAvatar({
           autoPlay
           playsInline
           className="h-full w-full object-cover"
+          aria-label="AI Avatar video"
         />
+
+        {isConnected && isSpeaking && (
+          <div
+            className="absolute left-4 top-4 flex items-center gap-2 rounded-full bg-blue-600/90 px-3 py-1.5"
+            role="status"
+            aria-live="polite"
+          >
+            <span className="relative flex h-3 w-3">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />
+              <span className="relative inline-flex h-3 w-3 rounded-full bg-white" />
+            </span>
+            <span className="text-xs font-medium text-white">Speaking</span>
+          </div>
+        )}
 
         {!isConnected && !isConnecting && (
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-900/80">
@@ -213,6 +246,50 @@ export function AnamAvatar({
         <div className="mt-2 rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-400">
           {error}
         </div>
+      )}
+
+      {isConnected && (
+        <form onSubmit={handleTextSubmit} className="mt-4">
+          <label htmlFor="text-input" className="sr-only">
+            Type a message to the avatar
+          </label>
+          <div className="flex gap-2">
+            <input
+              id="text-input"
+              type="text"
+              value={textInput}
+              onChange={(e) => setTextInput(e.target.value)}
+              placeholder="Type a message (alternative to voice)..."
+              className="flex-1 rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm text-zinc-900 placeholder-zinc-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50 dark:placeholder-zinc-400"
+              aria-describedby="text-input-help"
+            />
+            <button
+              type="submit"
+              disabled={!textInput.trim()}
+              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+              aria-label="Send message"
+            >
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={2}
+                stroke="currentColor"
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5"
+                />
+              </svg>
+              Send
+            </button>
+          </div>
+          <p id="text-input-help" className="mt-1.5 text-xs text-zinc-500 dark:text-zinc-400">
+            Use this text input as an alternative to voice interaction
+          </p>
+        </form>
       )}
     </div>
   );

@@ -5,6 +5,7 @@ import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../../../convex/_generated/api';
 import { Id } from '../../../../convex/_generated/dataModel';
 import { useState } from 'react';
+import { useToast } from '@/components/ui/toast';
 
 function formatDate(timestamp: number): string {
   return new Date(timestamp).toLocaleDateString('en-GB', {
@@ -81,6 +82,7 @@ function RoomCard({
             onClick={() => onDelete(id)}
             disabled={isDeleting}
             className="rounded-lg px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400 dark:hover:bg-red-900/20"
+            aria-label={`Delete room ${name}`}
           >
             {isDeleting ? 'Deleting...' : 'Delete'}
           </button>
@@ -94,6 +96,7 @@ export default function RoomsPage() {
   const rooms = useQuery(api.rooms.list);
   const deleteRoom = useMutation(api.rooms.remove);
   const [deletingId, setDeletingId] = useState<Id<'rooms'> | null>(null);
+  const { addToast } = useToast();
 
   const handleDelete = async (id: Id<'rooms'>) => {
     if (!confirm('Are you sure you want to delete this room? This action cannot be undone.')) {
@@ -103,9 +106,10 @@ export default function RoomsPage() {
     setDeletingId(id);
     try {
       await deleteRoom({ id });
+      addToast('Room deleted successfully', 'success');
     } catch (error) {
       console.error('Failed to delete room:', error);
-      alert('Failed to delete room. Please try again.');
+      addToast('Failed to delete room. Please try again.', 'error');
     } finally {
       setDeletingId(null);
     }

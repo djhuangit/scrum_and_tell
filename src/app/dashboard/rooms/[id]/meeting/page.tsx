@@ -11,16 +11,19 @@ import { ActionItemsPanel } from '@/components/meeting/ActionItemsPanel';
 import { TranscriptPanel } from '@/components/meeting/TranscriptPanel';
 import { MeetingSummary } from '@/components/meeting/MeetingSummary';
 import { useMeetingState } from '@/hooks/use-meeting-state';
+import { useToast } from '@/components/ui/toast';
 import { type AnamMessage, type AnamConnectionState } from '@/hooks/use-anam';
 
 export default function MeetingPage() {
   const params = useParams();
   const roomId = params.id as Id<'rooms'>;
+  const { addToast } = useToast();
 
   const room = useQuery(api.rooms.get, { id: roomId });
   const [messages, setMessages] = useState<AnamMessage[]>([]);
   const [connectionState, setConnectionState] =
     useState<AnamConnectionState>('idle');
+  const [isSpeaking, setIsSpeaking] = useState(false);
 
   const meetingState = useMeetingState({ roomId });
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
@@ -80,9 +83,12 @@ export default function MeetingPage() {
       return [...prev, message];
     });
 
+    if (message.role === 'assistant') {
+      setIsSpeaking(!message.endOfSpeech);
+    }
+
     const currentMeetingState = meetingStateRef.current;
 
-    // Debug logging
     console.log('[handleMessage] Received:', {
       role: message.role,
       endOfSpeech: message.endOfSpeech,
@@ -229,6 +235,7 @@ export default function MeetingPage() {
       currentMeetingState.setActiveSubState('listening');
     } catch (error) {
       console.error('[processUserTurn] Error:', error);
+      addToast('Failed to process your message. Please try again.', 'error');
       currentMeetingState.setActiveSubState('listening');
     } finally {
       processingRef.current = false;
@@ -303,17 +310,17 @@ export default function MeetingPage() {
       }
     } catch (error) {
       console.error('[handleEndMeeting] Failed to generate summary:', error);
+      addToast('Failed to generate meeting summary', 'warning');
     } finally {
       setIsGeneratingSummary(false);
     }
 
     console.log('[handleEndMeeting] Ending meeting...');
-    // Store the meeting ID before ending so we can still query for it
     endedMeetingIdRef.current = currentMeetingId;
-    // Use direct mutation with captured ID to avoid hook state sync issues
     await endMeetingMutation({ id: currentMeetingId });
-    // Set local state to show the ended view
     setMeetingEnded(true);
+    setIsSpeaking(false);
+    addToast('Meeting ended successfully', 'success');
     console.log('[handleEndMeeting] Meeting ended');
   }, [
     transcripts,
@@ -321,6 +328,7 @@ export default function MeetingPage() {
     actionItems,
     createSummary,
     endMeetingMutation,
+    addToast,
   ]);
 
   if (room === undefined) {
@@ -430,6 +438,7 @@ export default function MeetingPage() {
               roomContext={roomContext}
               onMessage={handleMessage}
               onConnectionChange={handleConnectionChange}
+              isSpeaking={isSpeaking}
             />
 
             <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">

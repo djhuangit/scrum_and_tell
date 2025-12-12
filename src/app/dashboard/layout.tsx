@@ -23,12 +23,25 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900">
-      <header className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-blue-600 focus:px-4 focus:py-2 focus:text-white focus:outline-none"
+      >
+        Skip to main content
+      </a>
+      <header
+        className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950"
+        role="banner"
+      >
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <Link href="/dashboard" className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">
+          <Link
+            href="/dashboard"
+            className="text-xl font-semibold text-zinc-900 dark:text-zinc-50"
+            aria-label="Ops Room - Home"
+          >
             Ops Room
           </Link>
-          <nav className="flex items-center gap-6">
+          <nav className="flex items-center gap-6" aria-label="Main navigation">
             <Link
               href="/dashboard"
               className={`text-sm font-medium transition-colors ${
@@ -36,6 +49,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   ? 'text-zinc-900 dark:text-zinc-50'
                   : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-50'
               }`}
+              aria-current={isActive('/dashboard') && !isActive('/dashboard/rooms') ? 'page' : undefined}
             >
               Dashboard
             </Link>
@@ -46,6 +60,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   ? 'text-zinc-900 dark:text-zinc-50'
                   : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-50'
               }`}
+              aria-current={isActive('/dashboard/rooms') ? 'page' : undefined}
             >
               Rooms
             </Link>
@@ -53,7 +68,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           </nav>
         </div>
       </header>
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <main
+        id="main-content"
+        className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8"
+        role="main"
+      >
         {children}
       </main>
     </div>
