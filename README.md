@@ -15,7 +15,7 @@ A document-aware voice meeting facilitator powered by AI. Upload context documen
 - **Framework**: Next.js 14+ (App Router)
 - **Authentication**: Clerk
 - **Database**: Convex
-- **AI Avatar**: Anam AI
+- **AI Avatar**: Anam AI with ElevenLabs voice synthesis
 - **LLM**: OpenAI GPT-4o-mini
 - **Styling**: Tailwind CSS v4
 - **Animations**: Framer Motion
@@ -55,6 +55,9 @@ A document-aware voice meeting facilitator powered by AI. Upload context documen
 
    # Anam AI
    ANAM_API_KEY=...
+
+   # ElevenLabs (optional - uses Anam default voice if not set)
+   ELEVENLABS_VOICE_ID=...
 
    # OpenAI
    OPENAI_API_KEY=sk-...
