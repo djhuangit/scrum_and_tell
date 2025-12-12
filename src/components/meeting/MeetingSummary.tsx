@@ -114,7 +114,7 @@ export function MeetingSummary({
 
     parts.push('---');
     parts.push(
-      `*Generated on ${formatDate(summary.generatedAt)} by Ops Room Companion*`
+      `*Generated on ${formatDate(summary.generatedAt)} by Scrum & Tell*`
     );
 
     return parts.join('\n');

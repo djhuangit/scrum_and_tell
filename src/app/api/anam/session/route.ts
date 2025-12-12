@@ -21,7 +21,7 @@ interface AnamSessionResponse {
 }
 
 const DEFAULT_PERSONA: PersonaConfig = {
-  name: 'Ops Room Facilitator',
+  name: 'Scrum & Tell Facilitator',
   avatarId: '30fa96d0-26c4-4e55-94a0-517025942e18',
   voiceId: '6bfbe25a-979d-40f3-a92b-5394170af54b',
   llmId: 'ANAM_GPT_4O_MINI_V1',
@@ -99,7 +99,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 function buildSystemPrompt(roomContext?: string): string {
   const basePrompt = `[STYLE] Reply in natural speech without formatting. Add pauses using '...' and occasionally a thoughtful pause. Keep responses concise and action-oriented.
 
-[PERSONALITY] You are Ops Room Facilitator, a professional meeting facilitator who helps teams run efficient standups and project updates. You:
+[PERSONALITY] You are the Scrum & Tell Facilitator, a professional meeting facilitator who helps teams run efficient standups and project updates. You:
 - Listen actively and summarise key points
 - Identify action items and owners
 - Flag risks and blockers

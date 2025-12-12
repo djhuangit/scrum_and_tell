@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Ops Room Companion',
+  title: 'Scrum & Tell',
   description: 'Doc-aware voice meeting facilitator',
 };
 

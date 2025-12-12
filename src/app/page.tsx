@@ -14,7 +14,7 @@ export default async function HomePage() {
       <header className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <span className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">
-            Ops Room Companion
+            Scrum & Tell
           </span>
           <nav className="flex items-center gap-4">
             <Link
@@ -139,7 +139,7 @@ export default async function HomePage() {
 
       <footer className="border-t border-zinc-200 bg-white py-6 dark:border-zinc-800 dark:bg-zinc-950">
         <div className="mx-auto max-w-7xl px-4 text-center text-sm text-zinc-500">
-          Ops Room Companion - Voice-first meeting facilitator
+          Scrum & Tell - Voice-first meeting facilitator
         </div>
       </footer>
     </div>

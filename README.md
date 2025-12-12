@@ -1,4 +1,4 @@
-# Ops Room Companion
+# Scrum & Tell
 
 A document-aware voice meeting facilitator powered by AI. Upload context documents, run voice meetings with an AI avatar, and get real-time action item extraction and meeting summaries.
 
@@ -131,4 +131,4 @@ To deploy your own instance:
 
 ## Licence
 
-MIT
+All Rights Reserved. Copyright 2025.

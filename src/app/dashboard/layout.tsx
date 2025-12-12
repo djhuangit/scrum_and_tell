@@ -37,9 +37,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           <Link
             href="/dashboard"
             className="text-xl font-semibold text-zinc-900 dark:text-zinc-50"
-            aria-label="Ops Room - Home"
+            aria-label="Scrum & Tell - Home"
           >
-            Ops Room
+            Scrum & Tell
           </Link>
           <nav className="flex items-center gap-6" aria-label="Main navigation">
             <Link
