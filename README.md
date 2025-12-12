@@ -57,6 +57,9 @@ A document-aware voice meeting facilitator powered by AI. Upload context documen
    # Anam AI
    ANAM_API_KEY=...
 
+   # Voice (optional - Anam voice ID that uses ElevenLabs TTS)
+   ELEVENLABS_VOICE_ID=f013d22e-276a-4111-ac6d-32ec86ca42fe
+
    # OpenAI
    OPENAI_API_KEY=sk-...
    ```
