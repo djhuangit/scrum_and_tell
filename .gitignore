@@ -46,3 +46,6 @@ __pycache__/
 
 # convex
 convex/_generated/
+
+# docs
+docs/
