@@ -116,6 +116,23 @@ export default function MeetingPage() {
     }
   }, []); // Stable - uses refs
 
+  const handleTextSend = useCallback((content: string) => {
+    const textMessage: AnamMessage = {
+      id: `text-${Date.now()}`,
+      content,
+      role: 'user',
+      timestamp: Date.now(),
+      endOfSpeech: true,
+    };
+
+    setMessages((prev) => [...prev, textMessage]);
+
+    const currentMeetingState = meetingStateRef.current;
+    if (currentMeetingState.state.status === 'active' && !processingRef.current) {
+      processUserTurn(textMessage);
+    }
+  }, []);
+
   const handleConnectionChange = useCallback(async (state: AnamConnectionState) => {
     setConnectionState(state);
     const currentMeetingState = meetingStateRef.current;
@@ -438,6 +455,7 @@ export default function MeetingPage() {
               roomContext={roomContext}
               onMessage={handleMessage}
               onConnectionChange={handleConnectionChange}
+              onSendMessage={handleTextSend}
               isSpeaking={isSpeaking}
             />
 

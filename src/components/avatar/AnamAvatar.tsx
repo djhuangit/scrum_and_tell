@@ -97,7 +97,7 @@ export function AnamAvatar({
 
   return (
     <div className={`relative ${className}`}>
-      <div className="aspect-video overflow-hidden rounded-xl bg-zinc-900">
+      <div className="relative aspect-video overflow-hidden rounded-xl bg-zinc-900">
         <video
           ref={videoRef}
           id="anam-avatar-video"
@@ -156,10 +156,9 @@ export function AnamAvatar({
             <p className="mt-3 text-sm text-zinc-400">Connecting to avatar...</p>
           </div>
         )}
-      </div>
 
-      {isConnected && (
-        <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-2">
+        {isConnected && (
+          <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-2">
           <button
             onClick={toggleMute}
             className={`rounded-full p-3 transition-colors ${
@@ -239,8 +238,9 @@ export function AnamAvatar({
               />
             </svg>
           </button>
-        </div>
-      )}
+          </div>
+        )}
+      </div>
 
       {connectionState === 'error' && error && (
         <div className="mt-2 rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-400">

@@ -11,18 +11,19 @@ interface TranscriptPanelProps {
 
 /**
  * Panel displaying the meeting transcript with animated message entries.
- * Auto-scrolls to latest messages.
+ * Shows both completed and in-progress messages. Auto-scrolls to latest.
  */
 export function TranscriptPanel({ messages, isConnected }: TranscriptPanelProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const completedMessages = messages.filter((m) => m.endOfSpeech);
+  const displayMessages = messages.filter((m) => m.content.trim().length > 0);
+  const completedCount = displayMessages.filter((m) => m.endOfSpeech).length;
 
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [completedMessages.length]);
+  }, [displayMessages.length, displayMessages[displayMessages.length - 1]?.content]);
 
   return (
     <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
@@ -30,9 +31,9 @@ export function TranscriptPanel({ messages, isConnected }: TranscriptPanelProps)
         <h3 className="font-medium text-zinc-900 dark:text-zinc-50">
           Transcript
         </h3>
-        {completedMessages.length > 0 && (
+        {completedCount > 0 && (
           <span className="text-xs text-zinc-500">
-            {completedMessages.length} messages
+            {completedCount} messages
           </span>
         )}
       </div>
@@ -41,7 +42,7 @@ export function TranscriptPanel({ messages, isConnected }: TranscriptPanelProps)
         ref={scrollRef}
         className="mt-4 max-h-96 space-y-3 overflow-y-auto scroll-smooth"
       >
-        {completedMessages.length === 0 ? (
+        {displayMessages.length === 0 ? (
           <p className="text-center text-sm text-zinc-500">
             {isConnected
               ? 'Conversation will appear here...'
@@ -49,7 +50,7 @@ export function TranscriptPanel({ messages, isConnected }: TranscriptPanelProps)
           </p>
         ) : (
           <AnimatePresence mode="popLayout">
-            {completedMessages.map((message) => (
+            {displayMessages.map((message) => (
               <motion.div
                 key={message.id}
                 layout
@@ -63,9 +64,17 @@ export function TranscriptPanel({ messages, isConnected }: TranscriptPanelProps)
                     : 'bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-200'
                 }`}
               >
-                <p className="mb-1 text-xs font-medium uppercase opacity-60">
-                  {message.role === 'assistant' ? 'Facilitator' : 'You'}
-                </p>
+                <div className="mb-1 flex items-center gap-2">
+                  <p className="text-xs font-medium uppercase opacity-60">
+                    {message.role === 'assistant' ? 'Facilitator' : 'You'}
+                  </p>
+                  {!message.endOfSpeech && (
+                    <span className="flex items-center gap-1 text-xs opacity-60">
+                      <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-current" />
+                      speaking
+                    </span>
+                  )}
+                </div>
                 <p className="whitespace-pre-wrap">{message.content}</p>
               </motion.div>
             ))}
